@@ -40,7 +40,6 @@ module yAlu(z, ex, a, b, op);
 	not noting(ex, z1);
 endmodule
 
-//--------------------------------------------------------------------------------------
 //---------------------------------------- MUX1  ---------------------------------------
 module yMux1(z, a, b, c);
 	output z;
@@ -52,7 +51,6 @@ module yMux1(z, a, b, c);
 	or my_or(z, upper, lower);
 endmodule 
 
-//---------------------------------------------------------------------------------------
 //--------------------------------------- MUX  ------------------------------------------
 module yMux(z, a, b, c);
 	parameter SIZE = 2;
@@ -62,7 +60,6 @@ module yMux(z, a, b, c);
 	yMux1 mine[SIZE-1:0](z, a, b, c);
 endmodule 
 
-//---------------------------------------------------------------------------------------
 //--------------------------------------MUX4to1------------------------------------------
 module yMux4to1(z,a0,a1,a2,a3, c);
 	parameter SIZE = 2;
@@ -75,7 +72,6 @@ module yMux4to1(z,a0,a1,a2,a3, c);
 	yMux #(SIZE) final(z, zLo, zHi, c[1]);
 endmodule 
 
-//---------------------------------------------------------------------------------------
 //-------------------------------------Adder1--------------------------------------------
 module yAdder1(z, cout, a, b, cin); 
 	output z, cout; 
@@ -87,7 +83,6 @@ module yAdder1(z, cout, a, b, cin);
 	or my_or(cout, outR, outL); 
 endmodule 
 
-//---------------------------------------------------------------------------------------
 //----------------------------------- Adder----------------------------------------------
 module yAdder(z, cout, a, b, cin); 
 	output [31:0] z; 
@@ -101,7 +96,6 @@ module yAdder(z, cout, a, b, cin);
 	assign cout = out[31];
 endmodule
 
-//--------------------------------------------------------------------------------------------
 //--------------------------------------Arith ------------------------------------------------
 module yArith(z, cout, a, b, ctrl); 
 
@@ -120,7 +114,6 @@ module yArith(z, cout, a, b, ctrl);
 
 endmodule
  
-//--------------------------------------------------------------------------------------------
 //-------------------------------------yEX---------------------------------------------------
 
 module yEX(z, zero, rd1, rd2, imm, op, ALUSrc); 
@@ -134,7 +127,7 @@ module yEX(z, zero, rd1, rd2, imm, op, ALUSrc);
 	yMux #(32) mux_two(b ,  rd2, imm, ALUSrc);
 	yAlu  myAlu(z, zero,rd1, b, op);
 endmodule
-//--------------------------------------------------------------------------------------------
+
 //-------------------------------------yID----------------------------------------------------
 module yID(rd1, rd2, imm, jTarget, ins, wd, RegDst, RegWrite, clk); 
 	output [31:0] rd1, rd2, imm;         // rs and rt and immediate 
@@ -151,7 +144,8 @@ module yID(rd1, rd2, imm, jTarget, ins, wd, RegDst, RegWrite, clk);
 	rf 	   myRf(rd1, rd2, rn1, rn2, wn, wd, clk, RegWrite);
 	yMux #(16) se(imm[31:16], 16'b0, 16'hffff, ins[15]);
 endmodule 
-//--------------------------------------------------------------------------------------------
+
+
 //--------------------------------------yIF---------------------------------------------------
 module yIF(ins, PCp4, PCin, clk);
 	output [31:0] ins, PCp4;
@@ -162,7 +156,7 @@ module yIF(ins, PCp4, PCin, clk);
 	yAlu myAlu(PCp4, null, pcOut, 32'd4, 3'b010);
 	mem myMem(ins, pcOut, 32'b0, clk, 1'b1, 1'b0);
 endmodule 
-//--------------------------------------------------------------------------------------------
+
 //-------------------------------------yDM----------------------------------------------------
 module yDM(memOut, exeOut, rd2, clk, MemRead, MemWrite); 
 	output [31:0] memOut; 
@@ -170,7 +164,7 @@ module yDM(memOut, exeOut, rd2, clk, MemRead, MemWrite);
 	input clk, MemRead, MemWrite; 
 	mem DM(memOut, exeOut, rd2, clk, MemRead, MemWrite); 
 endmodule 
-//--------------------------------------------------------------------------------------------
+
 //-------------------------------------yWB----------------------------------------------------
 module yWB(wb, exeOut, memOut, Mem2Reg); 
 	output [31:0] wb; 
@@ -178,9 +172,8 @@ module yWB(wb, exeOut, memOut, Mem2Reg);
 	input Mem2Reg; 
 	yMux #(32) WB(wb, exeOut, memOut, Mem2Reg);
 endmodule 
-//------------------------------------------------------------------------------------------------
-//-------------------------------------yPC--------------------------------------------------------
 
+//-------------------------------------yPC--------------------------------------------------------
 module yPC(PCin, PCp4, INT, entryPoint, imm, jTarget, zero, branch, jump);
 	output [31:0] PCin;
 	input [31:0] PCp4, entryPoint, imm;
@@ -189,19 +182,18 @@ module yPC(PCin, PCp4, INT, entryPoint, imm, jTarget, zero, branch, jump);
 	wire [31:0] immX4, bTarget, jTargetX4, choiceA, choiceB;
 	wire doBranch, zf;
 	assign immX4[31:2] = imm[29:0];
-	assign immX4[1:0] = 2'b00; 							//immX4 is the real address (imm * 4)
-	yAlu beq(bTarget, zf, PCp4, immX4, 3'b010);					//bTarget = PCp4 + imm * 4
-	and (doBranch, branch, zero); 							//doBranch
-	yMux #(32) mux1(choiceA, PCp4, bTarget, doBranch);				//if jump branch or execute the next
+	assign immX4[1:0] = 2'b00; 
+	yAlu beq(bTarget, zf, PCp4, immX4, 3'b010);
+	and (doBranch, branch, zero); 			
+	yMux #(32) mux1(choiceA, PCp4, bTarget, doBranch);			
 	assign jTargetX4[31:28] = PCp4[31:28];
 	assign jTargetX4[27:2] = jTarget[25:0];
 	assign jTargetX4[1:0] = 2'b00;
-	yMux #(32) mux2(choiceB, choiceA, jTargetX4, jump);				// if not jump then use choiceA
-	yMux #(32) mux3(PCin, choiceB, entryPoint, INT);				// choose between previous and entryPoint
+	yMux #(32) mux2(choiceB, choiceA, jTargetX4, jump);				
+	yMux #(32) mux3(PCin, choiceB, entryPoint, INT);				
 endmodule
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------yC1---------------------------------------------------------
 
+//-----------------------------------yC1---------------------------------------------------------
 module yC1(rtype, lw, sw, jump, branch, opCode);
 	output rtype, lw, sw, jump, branch;
 	input [5:0] opCode;
@@ -218,31 +210,28 @@ module yC1(rtype, lw, sw, jump, branch, opCode);
   	and (sw, opCode[5], not4 ,opCode[3], not2, opCode[1], opCode[0]);	//--------sw(101011)-------------
 	and (lw, opCode[5], not4, not3, not2, opCode[1], opCode[0]);		//--------lw(100011)-------------
 endmodule
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------yC2---------------------------------------------------------
 
+//-----------------------------------yC2---------------------------------------------------------
 module yC2(RegDst, ALUSrc, RegWrite, Mem2Reg, MemRead, MemWrite, rtype, lw, sw, branch);
 	output RegDst, ALUSrc, RegWrite, Mem2Reg, MemRead, MemWrite;
 	input rtype, lw, sw, branch;
-	assign RegDst = rtype;				//use [rd] field
-	nor (ALUSrc, rtype, branch);			//0 - do calculation; 1 - add immediate
-	nor (RegWrite, sw, branch);			//need to write to a register
+	assign RegDst = rtype;				
+	nor (ALUSrc, rtype, branch);			
+	nor (RegWrite, sw, branch);		
 	assign Mem2Reg = lw;
 	assign MemRead = lw;
 	assign MemWrite = sw;
 endmodule
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------yC3---------------------------------------------------------
 
+//-----------------------------------yC3---------------------------------------------------------
 module yC3(ALUop, rtype, branch);
 	output [1:0] ALUop;
 	input rtype, branch;
 	assign ALUop[0] = branch;
 	assign ALUop[1] = rtype;
 endmodule
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------yC4---------------------------------------------------------
 
+//-----------------------------------yC4---------------------------------------------------------
 module yC4(op, ALUop, fnCode);
 	output [2:0] op;
 	input [5:0] fnCode;
@@ -254,9 +243,9 @@ module yC4(op, ALUop, fnCode);
 	nand (op[1], ALUop[1], fnCode[2]);
 	or (op[2], t2, ALUop[0]);
 endmodule
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------yChip-------------------------------------------------------
 
+
+//-----------------------------------yChip-------------------------------------------------------
 module yChip(ins, rd2, wb, entryPoint, INT, clk);
 	output [31:0] ins, rd2, wb;
 	input [31:0] entryPoint;
@@ -281,6 +270,3 @@ module yChip(ins, rd2, wb, entryPoint, INT, clk);
 	yC3 myC3(ALUop, rtype, branch);
 	yC4 myC4(op, ALUop, fnCode);
 endmodule
-
-//-----------------------------------------------------------------------------------------------
-//-----------------------------------END---------------------------------------------------------
